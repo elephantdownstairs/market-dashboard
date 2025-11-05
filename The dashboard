@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Price Alert Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .date-control {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .date-control label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .date-control input[type="date"] {
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .date-control input[type="date"]:hover {
+            border-color: #667eea;
+        }
+        
+        .date-control input[type="date"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .refresh-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .refresh-btn:active {
+            transform: translateY(0);
+        }
+        
+        .refresh-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 30px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #495057;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        td input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+        
+        td input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+        
+        .positive {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .negative {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .analysis-section {
+            margin-top: 40px;
+        }
+        
+        .analysis-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .analysis-card h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .analysis-card .symbol {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+        
+        .drivers {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .drivers li {
+            padding: 10px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .drivers li:last-child {
+            border-bottom: none;
+        }
+        
+        .sources {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #dee2e6;
+        }
+        
+        .sources h4 {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+        
+        .sources a {
+            display: block;
+            color: #667eea;
+            text-decoration: none;
+            padding: 5px 0;
+            font-size: 0.9em;
+        }
+        
+        .sources a:hover {
+            text-decoration: underline;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .add-row-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 20px 0;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .add-row-btn:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+        
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .symbol-mapping {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-size: 0.9em;
+        }
+
+        .symbol-mapping h4 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .symbol-mapping ul {
+            margin-left: 20px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Market Price Alert Dashboard</h1>
+            <p>Track your favorite markets with real-time data - 100% FREE!</p>
+        </div>
+        
+        <div class="controls">
+            <div class="date-control">
+                <label for="startDate">Start Date:</label>
+                <input type="date" id="startDate">
+                
+                <label for="endDate">End Date:</label>
+                <input type="date" id="endDate">
+                
+                <button class="refresh-btn" onclick="refreshData()" id="refreshBtn">🔄 Refresh Data</button>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="symbol-mapping">
+                <h4>📝 Yahoo Finance Symbol Guide:</h4>
+                <ul>
+                    <li><strong>Indices:</strong> ^GSPC (S&P 500), ^N225 (Nikkei), ^HSI (Hang Seng)</li>
+                    <li><strong>Currencies:</strong> MYR=X (USD/MYR), EURUSD=X (EUR/USD)</li>
+                    <li><strong>Commodities:</strong> GC=F (Gold Futures), CL=F (Crude Oil)</li>
+                    <li><strong>Bonds:</strong> ^TNX (10-Year Treasury Yield)</li>
+                    <li>Use Yahoo Finance symbol format (e.g., AAPL for Apple, MSFT for Microsoft)</li>
+                </ul>
+            </div>
+
+            <button class="add-row-btn" onclick="addNewRow()">+ Add New Symbol</button>
+            
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Symbol (Yahoo Format)</th>
+                            <th>Name</th>
+                            <th>Current Price</th>
+                            <th>Previous Price</th>
+                            <th>Change (%)</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="analysisSection" class="analysis-section"></div>
+        </div>
+    </div>
+
+    <script>
+        // Mapping Bloomberg/common symbols to Yahoo Finance symbols
+        const symbolMapping = {
+            'SPX Index': '^GSPC',
+            'NKY Index': '^N225',
+            'HSCEI': '^HSCE',
+            'FBMKLCI': '^KLSE',
+            'Gold': 'GC=F',
+            'USGG10YR': '^TNX',
+            'USDMYR Curncy': 'MYR=X',
+            'SXXP Index': '^STOXX50E',
+            'MXWD Index': 'ACWI',
+            'MXASJ Index': 'EWJ',
+            'MGIY10Y Index': 'TLT'
+        };
+
+        const defaultSymbols = [
+            '^GSPC',      // S&P 500
+            '^N225',      // Nikkei
+            '^HSCE',      // Hang Seng China Enterprises
+            '^KLSE',      // FTSE Malaysia
+            'GC=F',       // Gold Futures
+            '^TNX',       // 10-Year Treasury
+            'MYR=X',      // USD/MYR
+            '^STOXX50E',  // Euro Stoxx 50
+            'ACWI',       // MSCI ACWI ETF
+            'EWJ',        // Japan ETF
+            'TLT'         // 20+ Year Treasury ETF
+        ];
+
+        function initializeDates() {
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 7);
+            
+            document.getElementById('endDate').valueAsDate = endDate;
+            document.getElementById('startDate').valueAsDate = startDate;
+        }
+
+        function initializeTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            defaultSymbols.forEach(symbol => {
+                addRow(symbol);
+            });
+        }
+
+        function addRow(symbol = '') {
+            const tbody = document.getElementById('tableBody');
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td><input type="text" value="${symbol}" placeholder="e.g., ^GSPC, AAPL, GC=F" class="symbol-input"></td>
+                <td class="name">-</td>
+                <td class="current-price">-</td>
+                <td class="previous-price">-</td>
+                <td class="change-pct">-</td>
+                <td><button class="delete-btn" onclick="deleteRow(this)">Delete</button></td>
+            `;
+        }
+
+        function addNewRow() {
+            addRow('');
+        }
+
+        function deleteRow(btn) {
+            const row = btn.parentNode.parentNode;
+            row.parentNode.removeChild(row);
+        }
+
+        async function getYahooFinanceData(symbol, startDate, endDate) {
+            try {
+                // Using Yahoo Finance API through yfinance endpoints
+                const quoteUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1mo`;
+                
+                const response = await fetch(quoteUrl);
+                const data = await response.json();
+                
+                if (data.chart && data.chart.result && data.chart.result[0]) {
+                    const result = data.chart.result[0];
+                    const meta = result.meta;
+                    const quote = result.indicators.quote[0];
+                    const timestamps = result.timestamp;
+                    
+                    // Get current price (most recent close)
+                    const currentPrice = quote.close[quote.close.length - 1];
+                    
+                    // Get previous price (7 days ago or closest available)
+                    const daysAgo = Math.min(7, quote.close.length - 1);
+                    const previousPrice = quote.close[quote.close.length - 1 - daysAgo];
+                    
+                    return {
+                        symbol: symbol,
+                        name: meta.longName || meta.shortName || symbol,
+                        currentPrice: currentPrice,
+                        previousPrice: previousPrice,
+                        currency: meta.currency || 'USD'
+                    };
+                }
+                throw new Error('No data available');
+            } catch (error) {
+                console.error(`Error fetching ${symbol}:`, error);
+                return {
+                    symbol: symbol,
+                    name: 'Error',
+                    currentPrice: null,
+                    previousPrice: null,
+                    error: error.message
+                };
+            }
+        }
+
+        async function refreshData() {
+            const btn = document.getElementById('refreshBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Loading...';
+            
+            const tbody = document.getElementById('tableBody');
+            const rows = tbody.getElementsByTagName('tr');
+            const symbolsData = [];
+            
+            // Clear previous data
+            for (let row of rows) {
+                row.querySelector('.name').textContent = 'Loading...';
+                row.querySelector('.current-price').textContent = 'Loading...';
+                row.querySelector('.previous-price').textContent = 'Loading...';
+                row.querySelector('.change-pct').textContent = 'Loading...';
+            }
+            
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            // Fetch data for each symbol
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const symbolInput = row.querySelector('.symbol-input');
+                const symbol = symbolInput.value.trim();
+                
+                if (symbol) {
+                    const data = await getYahooFinanceData(symbol, startDate, endDate);
+                    symbolsData.push(data);
+                    
+                    // Update table
+                    row.querySelector('.name').textContent = data.name;
+                    
+                    if (data.currentPrice && data.previousPrice) {
+                        const currentPrice = data.currentPrice.toFixed(2);
+                        const previousPrice = data.previousPrice.toFixed(2);
+                        const changePercent = (((data.currentPrice - data.previousPrice) / data.previousPrice) * 100).toFixed(2);
+                        
+                        row.querySelector('.current-price').textContent = `${data.currency} ${currentPrice}`;
+                        row.querySelector('.previous-price').textContent = `${data.currency} ${previousPrice}`;
+                        
+                        const changeTd = row.querySelector('.change-pct');
+                        changeTd.textContent = changePercent + '%';
+                        changeTd.className = 'change-pct ' + (changePercent >= 0 ? 'positive' : 'negative');
+                    } else {
+                        row.querySelector('.current-price').textContent = 'N/A';
+                        row.querySelector('.previous-price').textContent = 'N/A';
+                        row.querySelector('.change-pct').textContent = 'Error';
+                    }
+                }
+            }
+            
+            btn.disabled = false;
+            btn.textContent = '🔄 Refresh Data';
+            
+            // Show info about Claude API integration
+            displayAnalysisInfo(symbolsData);
+        }
+
+        async function displayAnalysisInfo(symbolsData) {
+            const analysisSection = document.getElementById('analysisSection');
+            
+            const significantMoves = symbolsData.filter(d => {
+                if (!d.currentPrice || !d.previousPrice) return false;
+                const changePercent = Math.abs(((d.currentPrice - d.previousPrice) / d.previousPrice) * 100);
+                return changePercent > 0.5; // Only analyze moves > 0.5%
+            });
+            
+            if (significantMoves.length === 0) {
+                analysisSection.innerHTML = `
+                    <div class="info">
+                        <h3>✅ Data loaded successfully!</h3>
+                        <p>No significant movements (>0.5%) detected in the selected period.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            analysisSection.innerHTML = `
+                <div class="loading">
+                    <h3>🔍 Analyzing ${significantMoves.length} significant market movements...</h3>
+                    <p>Claude is searching for news and analyzing price drivers...</p>
+                </div>
+            `;
+            
+            try {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                
+                // Prepare data for backend
+                const symbolsForAnalysis = significantMoves.map(d => ({
+                    symbol: d.symbol,
+                    name: d.name,
+                    changePercent: parseFloat((((d.currentPrice - d.previousPrice) / d.previousPrice) * 100).toFixed(2))
+                }));
+                
+                // Call backend API
+                const response = await fetch('http://localhost:5000/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        symbols: symbolsForAnalysis,
+                        startDate: startDate,
+                        endDate: endDate
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Backend error: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                // Display analyses
+                analysisSection.innerHTML = '<h2 style="margin-bottom: 20px; color: #495057;">📰 Market News Analysis (100% Free)</h2>';
+                
+                result.analyses.forEach(analysis => {
+                    const card = document.createElement('div');
+                    card.className = 'analysis-card';
+                    
+                    const changeClass = analysis.changePercent >= 0 ? 'positive' : 'negative';
+                    const changeSign = analysis.changePercent >= 0 ? '+' : '';
+                    
+                    let driversHtml = '<ul class="drivers">';
+                    analysis.analysis.drivers.forEach((driver, idx) => {
+                        driversHtml += `<li><strong>Driver ${idx + 1}:</strong> ${driver}</li>`;
+                    });
+                    driversHtml += '</ul>';
+                    
+                    let sourcesHtml = '';
+                    if (analysis.analysis.sources.length > 0) {
+                        sourcesHtml = '<div class="sources"><h4>📰 Sources:</h4>';
+                        analysis.analysis.sources.forEach(source => {
+                            // Try to extract URL if present
+                            const urlMatch = source.match(/(https?:\/\/[^\s]+)/);
+                            if (urlMatch) {
+                                const url = urlMatch[1];
+                                const text = source.replace(url, '').trim();
+                                sourcesHtml += `<a href="${url}" target="_blank">${text || url}</a>`;
+                            } else {
+                                sourcesHtml += `<a href="#" onclick="return false;">${source}</a>`;
+                            }
+                        });
+                        sourcesHtml += '</div>';
+                    }
+                    
+                    card.innerHTML = `
+                        <h3>
+                            <span class="symbol">${analysis.symbol}</span>
+                            <span style="color: #6c757d; font-size: 0.9em;">${analysis.name}</span>
+                            <span class="${changeClass}" style="margin-left: auto; font-size: 1em;">${changeSign}${analysis.changePercent.toFixed(2)}%</span>
+                        </h3>
+                        ${driversHtml}
+                        ${sourcesHtml}
+                    `;
+                    
+                    analysisSection.appendChild(card);
+                });
+                
+            } catch (error) {
+                analysisSection.innerHTML = `
+                    <div class="error">
+                        <h3>⚠️ Backend Connection Error</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p style="margin-top: 10px;">Make sure the Python backend server is running:</p>
+                        <ol style="margin-left: 20px; margin-top: 10px;">
+                            <li>Install dependencies: <code>pip install -r requirements.txt</code></li>
+                            <li>Run server: <code>python app.py</code></li>
+                            <li>No API keys needed - it's 100% free!</li>
+                        </ol>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            initializeDates();
+            initializeTable();
+        };
+    </script>
+</body>
+</html>
