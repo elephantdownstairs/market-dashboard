@@ -8,7 +8,11 @@ from bs4 import BeautifulSoup
 import time
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend access
+# Enable CORS for GitHub Pages
+CORS(app, origins=[
+    "https://elephantdownstairs.github.io",
+    "http://localhost:8000"
+])
 
 @app.route('/analyze', methods=['POST'])
 def analyze_market():
