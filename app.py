@@ -8,10 +8,12 @@ from bs4 import BeautifulSoup
 import time
 
 app = Flask(__name__)
-# Enable CORS for GitHub Pages
+# Enable CORS for GitHub Pages and localhost
 CORS(app, origins=[
     "https://elephantdownstairs.github.io",
-    "http://localhost:8000"
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "*"  # Allow all for testing (remove in production)
 ])
 
 @app.route('/analyze', methods=['POST'])
